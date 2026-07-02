@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telugu & Hindi Music Recommender</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --secondary: #ff007f;
+            --accent: #00f0ff;
+            --background: #06040f;
+            --surface: rgba(15, 12, 41, 0.4);
+            --surface-hover: rgba(15, 12, 41, 0.6);
+            --text-primary: #ffffff;
+            --text-secondary: #a2a2c2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            background: radial-gradient(circle at 50% 50%, #1c1537 0%, #080611 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Floating background shape animations */
+        .shape {
+            position: absolute;
+            filter: blur(120px);
+            z-index: 0;
+            opacity: 0.45;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+
+        .shape-1 {
+            width: 450px;
+            height: 450px;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            top: -150px;
+            left: -150px;
+            border-radius: 43% 57% 41% 59% / 57% 45% 55% 43%;
+        }
+
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            bottom: 100px;
+            right: -100px;
+            border-radius: 50% 50% 30% 70% / 50% 60% 40% 50%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            100% {
+                transform: translate(60px, 40px) rotate(180deg) scale(1.15);
+            }
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 800px;
+            padding: 2.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            width: 100%;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        /* Top Bar styled as a modern card */
+        .navbar-top {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+            margin-bottom: 2rem; 
+            background: rgba(255, 255, 255, 0.03); 
+            padding: 0.8rem 1.5rem; 
+            border-radius: 16px; 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-welcome {
+            font-size: 0.95rem; 
+            color: var(--text-secondary);
+        }
+
+        .user-welcome strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            color: var(--text-primary); 
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
+            padding: 0.4rem 0.8rem;
+            background: rgba(255, 77, 110, 0.1);
+            border: 1px solid rgba(255, 77, 110, 0.2);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 77, 110, 0.25);
+            border-color: rgba(255, 77, 110, 0.4);
+            transform: translateY(-1px);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent) 70%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            text-shadow: 0 4px 30px rgba(138, 43, 226, 0.15);
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .glass-panel {
+            background: var(--surface);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 2.5rem;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+                        0 10px 40px rgba(138, 43, 226, 0.08);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .mood-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .mood-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2rem;
+        }
+
+        @media (min-width: 600px) {
+            .mood-options {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .mood-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 18px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mood-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25), 
+                        0 0 15px rgba(138, 43, 226, 0.15);
+        }
+
+        .mood-card.active {
+            border-color: var(--primary);
+            background: rgba(138, 43, 226, 0.12);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.35),
+                        0 0 0 1px var(--primary) inset;
+        }
+
+        .mood-card.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+        }
+
+        .mood-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.6rem;
+            display: block;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
+            transition: transform 0.3s ease;
+        }
+
+        .mood-card:hover .mood-icon {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .mood-label {
+            font-weight: 600;
+            font-size: 1.05rem;
+            text-transform: capitalize;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+            background-size: 200% auto;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 1.1rem 2rem;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(255, 0, 127, 0.25);
+            margin-top: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-submit:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(255, 0, 127, 0.45),
+                        0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        .btn-submit:disabled {
+            background: #252331;
+            color: #626075;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .btn-refresh {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 0.9rem 2.2rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-refresh:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: scale(1.03);
+            box-shadow: 0 8px 25px rgba(0, 240, 255, 0.2);
+        }
+
+        .results-container {
+            margin-top: 2.5rem;
+            animation: fadeIn 0.8s ease-out forwards;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 2.5rem;
+        }
+
+        .results-header {
+            margin-bottom: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .results-header h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #a2a2c2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mood-badge {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.1);
+        }
+
+        .song-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        /* Beautiful Song Card */
+        .song-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.1rem 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .song-card:hover {
+            transform: translateX(6px) translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.25);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 
+                        0 0 15px rgba(0, 240, 255, 0.1);
+        }
+
+        .song-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .song-disc-container {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .song-disc {
+            font-size: 1.6rem;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        /* Disk spin animation on hover of card */
+        .song-card:hover .song-disc-container {
+            border-color: var(--secondary);
+        }
+
+        .song-card:hover .song-disc {
+            animation: spin 3.5s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .song-details {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .song-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .song-name:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .song-genre {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: white;
+            text-decoration: none;
+            padding: 0.6rem 1.4rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(255, 0, 127, 0.2);
+        }
+
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 0, 127, 0.4);
+        }
+
+        .play-icon {
+            font-size: 0.8rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            background: rgba(255, 77, 110, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 77, 110, 0.15);
+            box-shadow: 0 4px 15px rgba(255, 77, 110, 0.05);
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Language Selector */
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.7rem;
+        }
+
+        .language-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .lang-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.1rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .lang-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2),
+                        0 0 12px rgba(0, 240, 255, 0.1);
+        }
+
+        .lang-card.active {
+            border-color: var(--accent);
+            background: rgba(0, 240, 255, 0.08);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.25),
+                        0 0 0 1px var(--accent) inset;
+        }
+
+        .lang-card.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+        }
+
+        .lang-flag {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        .lang-label {
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 0.3px;
+        }
+
+        .lang-sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        .lang-text {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 0.5rem 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <main>
+        <header>
+            <div class="navbar-top">
+                <span class="user-welcome">Welcome, <strong th:text="${username}">User</strong></span>
+                <a href="/logout" class="btn-logout">
+                    <span>🚪</span> Logout
+                </a>
+            </div>
+            <h1>Music Beats</h1>
+            <p class="subtitle">AI-powered mood-based music recommendations in Telugu & Hindi</p>
+        </header>
+
+        <div class="glass-panel">
+            <form action="/recommend" method="POST" class="mood-form" id="moodForm">
+                <input type="hidden" id="moodInput" name="mood" th:value="${selectedMood != null ? selectedMood : ''}" required>
+                <input type="hidden" id="languageInput" name="language" th:value="${selectedLanguage != null ? selectedLanguage : 'telugu'}">
+
+                <p class="section-label">🌏 Choose your language</p>
+                <div class="language-options">
+                    <div class="lang-card" data-lang="telugu" th:classappend="${selectedLanguage == 'telugu' or selectedLanguage == null ? 'active' : ''}">
+                        <span class="lang-flag">🎭</span>
+                        <div class="lang-text">
+                            <span class="lang-label">Telugu Songs</span>
+                            <span class="lang-sub">తెలుగు పాటలు</span>
+                        </div>
+                    </div>
+                    <div class="lang-card" data-lang="hindi" th:classappend="${selectedLanguage == 'hindi' ? 'active' : ''}">
+                        <span class="lang-flag">🎵</span>
+                        <div class="lang-text">
+                            <span class="lang-label">Hindi Songs</span>
+                            <span class="lang-sub">हिंदी गाने</span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="divider">
+
+                <p class="section-label">💫 How are you feeling today?</p>
+                
+                <div class="mood-options">
+                    <div class="mood-card" data-mood="happy" th:classappend="${selectedMood == 'happy' ? 'active' : ''}">
+                        <span class="mood-icon">😎</span>
+                        <span class="mood-label">Happy</span>
+                    </div>
+                    <div class="mood-card" data-mood="sad" th:classappend="${selectedMood == 'sad' ? 'active' : ''}">
+                        <span class="mood-icon">🌧️</span>
+                        <span class="mood-label">Sad</span>
+                    </div>
+                    <div class="mood-card" data-mood="love" th:classappend="${selectedMood == 'love' ? 'active' : ''}">
+                        <span class="mood-icon">❤️</span>
+                        <span class="mood-label">Love</span>
+                    </div>
+                    <div class="mood-card" data-mood="energetic" th:classappend="${selectedMood == 'energetic' ? 'active' : ''}">
+                        <span class="mood-icon">⚡</span>
+                        <span class="mood-label">Energetic</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">Get Recommendations</button>
+            </form>
+
+            <div th:if="${songs != null}" class="results-container">
+                <div class="results-header">
+                    <h2>Your Playlist</h2>
+                    <span class="mood-badge" th:text="${selectedMood}">Mood</span>
+                </div>
+
+                <div th:if="${songs.empty}" class="no-results">
+                    <p>Sorry, we don't have recommendations for that mood right now.</p>
+                </div>
+
+                <ul th:if="${!songs.empty}" class="song-list">
+                    <li th:each="song : ${songs}" class="song-card">
+                        <div class="song-left">
+                            <div class="song-disc-container">
+                                <span class="song-disc">💿</span>
+                            </div>
+                            <div class="song-details">
+                                <a class="song-name" th:href="${song.url}" th:text="${song.name}" target="_blank" rel="noopener noreferrer">Song Name</a>
+                                <span class="song-genre" th:text="${(selectedLanguage == 'hindi' ? 'Hindi' : 'Telugu') + ' • ' + selectedMood}">Language • Mood</span>
+                            </div>
+                        </div>
+                        <a class="play-btn" th:href="${song.url}" target="_blank" rel="noopener noreferrer">
+                            Play <span class="play-icon">▶</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <form th:if="${!songs.empty}" action="/recommend" method="POST" style="margin-top: 2rem; display: flex; justify-content: center;">
+                    <input type="hidden" name="mood" th:value="${selectedMood}">
+                    <input type="hidden" name="language" th:value="${selectedLanguage}">
+                    <th:block th:each="song : ${songs}">
+                        <input type="hidden" name="exclude" th:value="${song.name}">
+                    </th:block>
+                    <button type="submit" class="btn-refresh">
+                        <span>🔄</span> Refresh for New Songs
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const moodCards = document.querySelectorAll('.mood-card');
+            const langCards = document.querySelectorAll('.lang-card');
+            const moodInput = document.getElementById('moodInput');
+            const languageInput = document.getElementById('languageInput');
+            const submitBtn = document.getElementById('submitBtn');
+
+            // Initialize button state
+            if (!moodInput.value) {
+                submitBtn.disabled = true;
+            }
+
+            // Language card handlers
+            langCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    langCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    languageInput.value = card.getAttribute('data-lang');
+                });
+            });
+
+            // Mood card handlers
+            moodCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    moodCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    const selectedMood = card.getAttribute('data-mood');
+                    moodInput.value = selectedMood;
+                    submitBtn.disabled = false;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
