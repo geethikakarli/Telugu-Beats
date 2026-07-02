@@ -684,6 +684,7 @@
             const moodInput = document.getElementById('moodInput');
             const languageInput = document.getElementById('languageInput');
             const submitBtn = document.getElementById('submitBtn');
+            const moodForm = document.getElementById('moodForm');
 
             // Initialize button state
             if (!moodInput.value) {
@@ -709,6 +710,70 @@
                     submitBtn.disabled = false;
                 });
             });
+
+            // Intercept form submissions for AJAX
+            moodForm.addEventListener('submit', handleFormSubmit);
+
+            function bindRefreshForm() {
+                const resultsContainer = document.querySelector('.results-container');
+                if (resultsContainer) {
+                    const refreshForm = resultsContainer.querySelector('form');
+                    if (refreshForm) {
+                        refreshForm.addEventListener('submit', handleFormSubmit);
+                    }
+                }
+            }
+
+            // Initial bind for refresh form if it exists
+            bindRefreshForm();
+
+            async function handleFormSubmit(e) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                
+                const glassPanel = document.querySelector('.glass-panel');
+                glassPanel.style.opacity = '0.75';
+                
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new URLSearchParams(formData)
+                    });
+                    
+                    if (response.ok) {
+                        const htmlString = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(htmlString, 'text/html');
+                        
+                        const newResults = doc.querySelector('.results-container');
+                        let oldResults = document.querySelector('.results-container');
+                        
+                        if (oldResults) {
+                            if (newResults) {
+                                oldResults.replaceWith(newResults);
+                            } else {
+                                oldResults.remove();
+                            }
+                        } else if (newResults) {
+                            glassPanel.appendChild(newResults);
+                        }
+                        
+                        const moodVal = doc.querySelector('#moodInput').value;
+                        const langVal = doc.querySelector('#languageInput').value;
+                        
+                        // Update address bar URL dynamically without page reload
+                        window.history.pushState(null, '', `/?mood=${moodVal}&language=${langVal}`);
+                        
+                        // Re-bind listener for the new refresh form
+                        bindRefreshForm();
+                    }
+                } catch (error) {
+                    console.error("AJAX loading failed: ", error);
+                } finally {
+                    glassPanel.style.opacity = '1';
+                }
+            }
         });
     </script>
 </body>

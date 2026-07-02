@@ -21,12 +21,21 @@ public class MusicController {
     }
 
     @GetMapping("/")
-    public String index(HttpSession session, Model model) {
+    public String index(@RequestParam(value = "mood", required = false) String mood,
+                        @RequestParam(value = "language", defaultValue = "telugu") String language,
+                        HttpSession session, 
+                        Model model) {
         if (session.getAttribute("user") == null) {
             return "redirect:/login";
         }
         model.addAttribute("username", session.getAttribute("user"));
-        model.addAttribute("selectedLanguage", "telugu");
+        model.addAttribute("selectedLanguage", language);
+        
+        if (mood != null && !mood.isEmpty()) {
+            List<Song> recommendedSongs = musicService.getRecommendationsByMood(mood, language, null);
+            model.addAttribute("selectedMood", mood);
+            model.addAttribute("songs", recommendedSongs);
+        }
         return "index";
     }
 
