@@ -1,0 +1,5 @@
+music-recommender/target/
+*.log
+.vscode/
+*.iml
+.idea/
