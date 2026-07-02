@@ -711,8 +711,68 @@
                 });
             });
 
-            // Intercept form submissions for AJAX
-            moodForm.addEventListener('submit', handleFormSubmit);
+            // AJAX Form Submit handler (declared before binding)
+            async function handleFormSubmit(e) {
+                e.preventDefault();
+                const form = e.target;
+                
+                // Cross-browser parameter serialization (safely handles duplicate keys like 'exclude')
+                const formData = new FormData(form);
+                const params = new URLSearchParams();
+                for (const pair of formData.entries()) {
+                    params.append(pair[0], pair[1]);
+                }
+                
+                const glassPanel = document.querySelector('.glass-panel');
+                if (glassPanel) {
+                    glassPanel.style.opacity = '0.75';
+                }
+                
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: params
+                    });
+                    
+                    if (response.ok) {
+                        const htmlString = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(htmlString, 'text/html');
+                        
+                        const newResults = doc.querySelector('.results-container');
+                        const oldResults = document.querySelector('.results-container');
+                        
+                        if (oldResults) {
+                            if (newResults) {
+                                oldResults.replaceWith(newResults);
+                            } else {
+                                oldResults.remove();
+                            }
+                        } else if (newResults && glassPanel) {
+                            glassPanel.appendChild(newResults);
+                        }
+                        
+                        const moodInputDoc = doc.querySelector('#moodInput');
+                        const languageInputDoc = doc.querySelector('#languageInput');
+                        const moodVal = moodInputDoc ? moodInputDoc.value : '';
+                        const langVal = languageInputDoc ? languageInputDoc.value : 'telugu';
+                        
+                        // Update address bar URL dynamically without page reload
+                        if (moodVal) {
+                            window.history.pushState(null, '', `/?mood=${moodVal}&language=${langVal}`);
+                        }
+                        
+                        // Re-bind listener for the newly generated refresh form
+                        bindRefreshForm();
+                    }
+                } catch (error) {
+                    console.error("AJAX request failed: ", error);
+                } finally {
+                    if (glassPanel) {
+                        glassPanel.style.opacity = '1';
+                    }
+                }
+            }
 
             function bindRefreshForm() {
                 const resultsContainer = document.querySelector('.results-container');
@@ -724,56 +784,13 @@
                 }
             }
 
+            // Intercept form submissions for AJAX
+            if (moodForm) {
+                moodForm.addEventListener('submit', handleFormSubmit);
+            }
+
             // Initial bind for refresh form if it exists
             bindRefreshForm();
-
-            async function handleFormSubmit(e) {
-                e.preventDefault();
-                const form = e.target;
-                const formData = new FormData(form);
-                
-                const glassPanel = document.querySelector('.glass-panel');
-                glassPanel.style.opacity = '0.75';
-                
-                try {
-                    const response = await fetch(form.action, {
-                        method: 'POST',
-                        body: new URLSearchParams(formData)
-                    });
-                    
-                    if (response.ok) {
-                        const htmlString = await response.text();
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(htmlString, 'text/html');
-                        
-                        const newResults = doc.querySelector('.results-container');
-                        let oldResults = document.querySelector('.results-container');
-                        
-                        if (oldResults) {
-                            if (newResults) {
-                                oldResults.replaceWith(newResults);
-                            } else {
-                                oldResults.remove();
-                            }
-                        } else if (newResults) {
-                            glassPanel.appendChild(newResults);
-                        }
-                        
-                        const moodVal = doc.querySelector('#moodInput').value;
-                        const langVal = doc.querySelector('#languageInput').value;
-                        
-                        // Update address bar URL dynamically without page reload
-                        window.history.pushState(null, '', `/?mood=${moodVal}&language=${langVal}`);
-                        
-                        // Re-bind listener for the new refresh form
-                        bindRefreshForm();
-                    }
-                } catch (error) {
-                    console.error("AJAX loading failed: ", error);
-                } finally {
-                    glassPanel.style.opacity = '1';
-                }
-            }
         });
     </script>
 </body>
